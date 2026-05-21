@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentShipping\Resources;
 
+use AIArmada\CommerceSupport\Support\MoneyFormatter;
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Support\OwnerScope;
 use AIArmada\FilamentShipping\Resources\ShippingRateResource\Pages;
 use AIArmada\Shipping\Models\ShippingRate;
 use AIArmada\Shipping\Models\ShippingZone;
@@ -54,7 +56,7 @@ class ShippingRateResource extends Resource
         }
 
         return $query->whereHas('zone', /** @phpstan-ignore-next-line */ function (Builder $q) use ($owner): void {
-            $q->forOwner($owner, includeGlobal: true); // @phpstan-ignore method.notFound
+            $q->forOwner($owner, includeGlobal: (bool) config('shipping.features.owner.include_global', false)); // @phpstan-ignore method.notFound
         });
     }
 
@@ -219,8 +221,8 @@ class ShippingRateResource extends Resource
                             ->itemLabel(fn (array $state): ?string => match ($state['type'] ?? null) {
                                 'min_weight' => 'Min Weight: ' . ($state['value'] ?? '?') . 'g',
                                 'max_weight' => 'Max Weight: ' . ($state['value'] ?? '?') . 'g',
-                                'min_order_total' => 'Min Order: RM' . number_format(($state['value'] ?? 0) / 100, 2),
-                                'max_order_total' => 'Max Order: RM' . number_format(($state['value'] ?? 0) / 100, 2),
+                                'min_order_total' => 'Min Order: ' . MoneyFormatter::formatMinor((int) ($state['value'] ?? 0), config('shipping.defaults.currency', 'MYR')),
+                                'max_order_total' => 'Max Order: ' . MoneyFormatter::formatMinor((int) ($state['value'] ?? 0), config('shipping.defaults.currency', 'MYR')),
                                 'min_items' => 'Min Items: ' . ($state['value'] ?? '?'),
                                 'max_items' => 'Max Items: ' . ($state['value'] ?? '?'),
                                 default => null,
@@ -278,7 +280,20 @@ class ShippingRateResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('zone_id')
                     ->label('Zone')
-                    ->relationship('zone', 'name'),
+                    ->relationship('zone', 'name', function (Builder $query): Builder {
+                        if (! (bool) config('shipping.features.owner.enabled', false)) {
+                            return $query;
+                        }
+
+                        $owner = OwnerContext::resolve();
+
+                        if ($owner === null) {
+                            return $query->whereRaw('0 = 1');
+                        }
+
+                        /** @phpstan-ignore-next-line dynamic scope from HasOwner trait */
+                        return $query->forOwner($owner, includeGlobal: (bool) config('shipping.features.owner.include_global', false));
+                    }),
 
                 Tables\Filters\SelectFilter::make('calculation_type')
                     ->options([
@@ -323,12 +338,16 @@ class ShippingRateResource extends Resource
      */
     protected static function getZoneOptions(): array
     {
-        $query = ShippingZone::query()->where('active', true);
+        $query = ShippingZone::query()
+            ->withoutGlobalScope(OwnerScope::class)
+            ->where('active', true);
 
         if ((bool) config('shipping.features.owner.enabled', false)) {
             $owner = OwnerContext::resolve();
-            if ($owner !== null) {
-                $query->forOwner($owner, includeGlobal: true);
+            if ($owner === null) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->forOwner($owner, includeGlobal: (bool) config('shipping.features.owner.include_global', false));
             }
         }
 
