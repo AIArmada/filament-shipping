@@ -89,7 +89,6 @@ use AIArmada\Shipping\Services\ShipmentService;
 $service = app(ShipmentService::class);
 
 try {
-    // ship() takes only the shipment; it delegates to ShipShipment::run()
     $result = $service->ship($shipment);
 } catch (\Throwable $e) {
     dd($e->getMessage());
@@ -127,10 +126,10 @@ use AIArmada\Shipping\Models\Shipment;
 use AIArmada\Shipping\States\Pending;
 
 // Check data exists
-Shipment::whereState('status', Pending::class)->count();
+Shipment::where('status', Pending::class)->count();
 
 // Check with owner scope
-Shipment::forOwner($owner)->whereState('status', Pending::class)->count();
+Shipment::forOwner($owner)->where('status', Pending::class)->count();
 ```
 
 ### Widget Not Refreshing
@@ -155,7 +154,6 @@ Shipping widgets use fixed polling intervals in their widget classes. If polling
    ```php
    use AIArmada\CommerceSupport\Support\OwnerContext;
 
-   // setForRequest() is for middleware; scoped work uses withOwner()
    OwnerContext::setForRequest($tenant);
    ```
 
@@ -171,12 +169,10 @@ Shipping widgets use fixed polling intervals in their widget classes. If polling
 
 ### Navigation Badge Shows Wrong Count
 
-The badge caches counts for 15 seconds. Wait, or forget the key directly —
-`Cache::forget()` does not glob, so build the exact key:
+The badge caches counts for 15 seconds. Wait or clear cache:
 
 ```php
-// Key format: filament-shipping.fulfillment-queue.badge.{ownerKey}.{with-global|owner-only}
-Cache::forget('filament-shipping.fulfillment-queue.badge.global.owner-only');
+Cache::forget('filament-shipping.fulfillment-queue.badge.*');
 ```
 
 ## Performance Issues
@@ -188,8 +184,7 @@ Cache::forget('filament-shipping.fulfillment-queue.badge.global.owner-only');
    FilamentShippingPlugin::make()->dashboardWidgets(false);
    ```
 
-2. Add database indexes (table name comes from `config/shipping.php`
-   `database.tables.shipments`, default `shipments`):
+2. Add database indexes:
    ```php
    Schema::table('shipments', function (Blueprint $table) {
        $table->index('status');
@@ -241,5 +236,5 @@ Check carrier is configured in shipping drivers:
 
 1. Check Laravel logs: `storage/logs/laravel.log`
 2. Enable Filament debug mode
-3. Review the [shipping package docs](../shipping/01-overview.md)
+3. Review the [shipping package docs](../../shipping/docs/01-overview.md)
 4. Open an issue on [GitHub](https://github.com/aiarmada/commerce/issues)

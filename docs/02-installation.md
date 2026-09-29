@@ -8,7 +8,7 @@ title: Installation
 
 - PHP 8.4+
 - Laravel 13+
-- Filament 5.8+
+- Filament 5.0+
 - `aiarmada/shipping` package
 
 ## Install via Composer
@@ -67,7 +67,6 @@ FilamentShippingPlugin::make()
     // Enable/disable resources
     ->shipmentResource()
     ->shippingZoneResource()
-    ->shippingRateResource()
     ->returnAuthorizationResource()
 
     // Enable/disable pages
@@ -79,13 +78,12 @@ FilamentShippingPlugin::make()
     ->dashboardWidgets()
 ```
 
-Every toggle takes an optional `bool` (default `true`), so pass `false` to
-disable:
+Or disable specific features:
 
 ```php
 FilamentShippingPlugin::make()
     ->fulfillmentQueue(false)
-    ->manifestPage(false);
+    ->manifestPage(false)
 ```
 
 ## Required Permissions

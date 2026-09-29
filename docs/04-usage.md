@@ -157,24 +157,18 @@ Available on the shipment list:
 
 | Action | Description |
 |--------|-------------|
-| Bulk Delete | Delete selected shipments |
-
-There are no bulk ship / cancel / print / sync actions in this package.
+| Bulk Ship | Ship multiple shipments |
+| Bulk Cancel | Cancel multiple shipments |
+| Bulk Print Labels | Download labels as ZIP |
+| Bulk Sync Tracking | Update tracking for multiple |
 
 ### Using Actions Programmatically
-
-`ShipAction`, `CancelShipmentAction`, `PrintLabelAction`, and
-`SyncTrackingAction` are `Filament\Actions\Action` subclasses, so they are
-wired up through the table definition:
 
 ```php
 use AIArmada\FilamentShipping\Actions\ShipAction;
 use AIArmada\FilamentShipping\Actions\CancelShipmentAction;
 use AIArmada\FilamentShipping\Actions\PrintLabelAction;
 use AIArmada\FilamentShipping\Actions\SyncTrackingAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Tables\Table;
 
 // In a resource
 public static function table(Table $table): Table
@@ -187,9 +181,10 @@ public static function table(Table $table): Table
             SyncTrackingAction::make(),
         ])
         ->bulkActions([
-            BulkActionGroup::make([
-                DeleteBulkAction::make(),
-            ]),
+            ShipAction::bulkAction(),
+            CancelShipmentAction::bulkAction(),
+            PrintLabelAction::bulkAction(),
+            SyncTrackingAction::bulkAction(),
         ]);
 }
 ```
@@ -201,11 +196,12 @@ For programmatic shipping operations outside of table actions, use the domain Ac
 ```php
 use AIArmada\Shipping\Actions\CreateShipment;
 use AIArmada\Shipping\Actions\ShipShipment;
+use AIArmada\Shipping\Actions\CancelShipment;
 use AIArmada\Shipping\Actions\GenerateLabel;
-use AIArmada\Shipping\Data\ShipmentData;
+use AIArmada\Shipping\Actions\RecordTrackingEvent;
 
 // Inside a Filament action handler
-$shipment = CreateShipment::run($shipmentData); // ShipmentData
+$shipment = CreateShipment::run($shipmentData);
 $result = ShipShipment::run($shipment);
 $label = GenerateLabel::run($shipment);
 ```

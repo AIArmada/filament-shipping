@@ -47,7 +47,7 @@ Define available shipping methods for dropdowns:
 
 ## Carriers
 
-The shipped config ships an empty `carriers` array:
+Configure carrier options for the UI:
 
 ```php
 'carriers' => [
@@ -55,9 +55,7 @@ The shipped config ships an empty `carriers` array:
 ],
 ```
 
-Note: no code in this package reads `filament-shipping.carriers`. Carrier
-options come from `config/shipping.php` `drivers` instead, so populating this
-key has no effect.
+Carriers default to empty; when empty, carriers are loaded from `config/shipping.php` drivers.
 
 ## Features
 
@@ -89,6 +87,11 @@ Settings for the fulfillment queue page:
 <?php
 
 return [
+    'navigation' => [
+        'group' => 'Shipping',
+        'sort' => 40,
+    ],
+
     'shipping_methods' => [
         'standard' => 'Standard',
         'express' => 'Express',
@@ -107,11 +110,6 @@ return [
     'fulfillment' => [
         'urgent_threshold_hours' => 48,
         'old_threshold_hours' => 24,
-    ],
-
-    'navigation' => [
-        'group' => 'Shipping',
-        'sort' => 40,
     ],
 
     'pages' => [
